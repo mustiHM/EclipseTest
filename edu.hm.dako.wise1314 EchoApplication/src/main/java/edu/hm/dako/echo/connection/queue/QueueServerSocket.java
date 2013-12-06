@@ -26,7 +26,17 @@ public class QueueServerSocket implements ServerSocket {
 	
 	@Override
 	public Connection accept() throws Exception {
-		return new QueueConnectionMock();
+		/*
+		 * Diese Methode muss ein blockierendes Verhalten haben!
+		 * Vergleich: bei TCP wird solange blockiert, bis ein Verbindungswunsch eintrifft.
+		 * Da hier keine Wünsche eintreffen, sondern nur Pakete in der Queue landen, wird solange blockiert, bis ein Packet eintrifft.
+		 */
+		Connection con = new QueueConnectionMock(requestIP, requestPort, requestQueue, 
+				responseIP, responsePort, responseQueue);
+		
+		
+		
+		return con;
 	}
 
 	@Override

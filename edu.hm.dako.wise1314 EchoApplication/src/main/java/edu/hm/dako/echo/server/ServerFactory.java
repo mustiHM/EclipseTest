@@ -40,7 +40,7 @@ public final class ServerFactory {
              // Weitere Implementierungen hier einbauen
             case QueueMultiThreaded:
             	return new QueueEchoServerImpl(Executors.newCachedThreadPool(), getDecoratedServerSocket(
-            			new QueueServerSocket("localhost", 1111, "requests", "localhost", 1111, "responses")),true);
+            			new QueueServerSocket("localhost", 1111, "requests", "localhost", 1111, "responses")));
             
             default:
                 throw new RuntimeException("Unknown type: " + type);

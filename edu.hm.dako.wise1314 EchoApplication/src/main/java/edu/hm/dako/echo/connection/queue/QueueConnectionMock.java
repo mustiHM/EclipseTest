@@ -45,7 +45,8 @@ public class QueueConnectionMock implements Connection {
 		messageIndex = 0;
 	}
 	
-	public QueueConnectionMock(){
+	public QueueConnectionMock(String requestIP, int requestPort, String requestQueue, 
+			String responseIP, int responsePort, String responseQueue){
 		/*
 		 * Da dieser Mock keine wirkliche Verbindung aufbauen muss, wird einfach nur eine Standart PDU erstellt,
 		 * die immer als simulierte erhaltene PDU weitergegeben wird.

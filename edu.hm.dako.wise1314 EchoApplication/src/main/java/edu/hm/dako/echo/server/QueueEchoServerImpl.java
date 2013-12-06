@@ -16,11 +16,13 @@ public class QueueEchoServerImpl implements EchoServer {
 	private final ExecutorService executorService;
 
 	private ServerSocket socket;
-
-	private final boolean singleConnectionForClient;
 	
-	public QueueEchoServerImpl(ExecutorService executorService, ServerSocket socket, boolean singleConnectionForClient){
-		this.singleConnectionForClient = singleConnectionForClient;
+	/**
+	 * Wird z.B. von der ServerFactory aufgerufen und richtet die Queue-Implementierung des Echo-Servers her.
+	 * @param executorService der Executor-Service für die Thread-Steuerung
+	 * @param socket das Socket durch dem die Packet empfangen werden sollen
+	 */
+	public QueueEchoServerImpl(ExecutorService executorService, ServerSocket socket){
         this.executorService = executorService;
         this.socket = socket;
 	}
@@ -31,7 +33,15 @@ public class QueueEchoServerImpl implements EchoServer {
 
         while (!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
         	try {
-				Connection connection = socket.accept();
+				Connection connection = socket.accept(); 
+				/*
+				 * Bei der QueueConnection wird an dieser Stelle keine Verbindung angenommen wie bei TCP.
+				 * Hier wird einfach eine Verbindung zur Queue hergestellt und gewartet bis ein Paket eintrifft.
+				 * Vorher bringt es nichts, unnötige Threads und Verbindungen aufzubauen.
+				 */
+				
+				
+				
 				
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -51,6 +61,8 @@ public class QueueEchoServerImpl implements EchoServer {
 	 *
 	 */
 	private class EchoWorker implements Runnable {
+		
+		private Connection connection;
 		
 		public void run() {
 			
