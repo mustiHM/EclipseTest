@@ -5,30 +5,38 @@ import edu.hm.dako.echo.connection.ServerSocket;
 
 public class QueueServerSocket implements ServerSocket {
 
-	String requestQueue;
-	String responseQueue;
+	private String requestIP;
+	private int requestPort;
+	private String requestQueue;
+	private String responseIP;
+	private int responsePort;
+	private String responseQueue;
+	private boolean isClosed; // in dieser Implementierung nicht so relevant, verglichen mit der TCP-Implementierung
 	
-	public QueueServerSocket(String requestQueue, String responseQueue){
+	public QueueServerSocket(String requestIP, int requestPort, String requestQueue, 
+			String responseIP, int responsePort, String responseQueue){
+		this.requestIP = requestIP;
+		this.requestPort = requestPort;
 		this.requestQueue = requestQueue;
+		this.responseIP = responseIP;
+		this.responsePort = responsePort;
 		this.responseQueue = responseQueue;
+		isClosed = false;
 	}
 	
 	@Override
 	public Connection accept() throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		return new QueueConnectionMock();
 	}
 
 	@Override
 	public void close() throws Exception {
-		// TODO Auto-generated method stub
-
+		isClosed = true;
 	}
 
 	@Override
 	public boolean isClosed() {
-		// TODO Auto-generated method stub
-		return false;
+		return isClosed;
 	}
 
 }
