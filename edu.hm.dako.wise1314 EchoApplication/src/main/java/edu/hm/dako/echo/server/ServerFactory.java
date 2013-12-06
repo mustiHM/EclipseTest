@@ -4,7 +4,9 @@ import edu.hm.dako.echo.benchmarking.UserInterfaceInputParameters;
 import edu.hm.dako.echo.connection.Connection;
 import edu.hm.dako.echo.connection.LoggingConnectionDecorator;
 import edu.hm.dako.echo.connection.ServerSocket;
+import edu.hm.dako.echo.connection.queue.QueueServerSocket;
 import edu.hm.dako.echo.connection.tcp.TcpServerSocket;
+
 
 
 import java.util.concurrent.Executors;
@@ -35,7 +37,10 @@ public final class ServerFactory {
                 return new DefaultEchoServerImpl(Executors.newCachedThreadPool(), getDecoratedServerSocket(
                         new TcpServerSocket(DEFAULT_SERVER_PORT)), true);
        
-             // Weitere Implementierungen hier einbauen 
+             // Weitere Implementierungen hier einbauen
+            case QueueMultiThreaded:
+            	return new QueueEchoServerImpl(Executors.newCachedThreadPool(), getDecoratedServerSocket(
+            			new QueueServerSocket("localhost", 1111, "requests", "localhost", 1111, "responses")),true);
             
             default:
                 throw new RuntimeException("Unknown type: " + type);

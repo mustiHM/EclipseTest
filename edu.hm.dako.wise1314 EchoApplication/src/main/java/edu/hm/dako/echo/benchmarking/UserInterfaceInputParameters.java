@@ -27,6 +27,7 @@ public class UserInterfaceInputParameters {
     public enum ImplementationType {
         TCPSingleThreaded,
         TCPMultiThreaded,
+        QueueMultiThreaded
     }
 
     /**
