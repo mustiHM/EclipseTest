@@ -18,7 +18,7 @@ import edu.hm.dako.echo.connection.Connection;
 public class EMSConnection implements Connection {
 
 	private String serverUrl;
-	private String port;
+	private int port;
 	private String userName;
 	private String password;
 	private String queueName;
@@ -26,7 +26,7 @@ public class EMSConnection implements Connection {
 	private QueueSession session;
 	private Queue queue; 
 	
-	public EMSConnection(String serverUrl, String port, String userName, String password, String queueName){
+	public EMSConnection(String serverUrl, int port, String userName, String password, String queueName){
 		this.serverUrl = serverUrl;
 		this.port = port;
 		this.userName = userName;
@@ -35,7 +35,12 @@ public class EMSConnection implements Connection {
 		
 		try
 		{
-			QueueConnectionFactory factory = new TibjmsQueueConnectionFactory(serverUrl, port);
+			//der port muss in eine String umgewandelt werden, damit der TibjmsQueueConnectionFactory seine Bedingungen erfüllt
+			//warum der port am anfang als int deklariert wird, ist wegen der QueueConnectionFactory, da dort im Konstruktor 
+			//ein int-Wert erforderlich ist
+			String serverPort = String.valueOf(port);
+			
+			QueueConnectionFactory factory = new TibjmsQueueConnectionFactory(serverUrl, serverPort);
 			
 			QueueConnection connection = factory.createQueueConnection(userName, password);
 			
@@ -70,6 +75,7 @@ public class EMSConnection implements Connection {
 	public void send(Serializable message) throws Exception {
 		QueueSender sender = session.createSender(queue);
 		ObjectMessage objmsg = session.createObjectMessage();
+		sender.send(objmsg);
 
 	}
 
