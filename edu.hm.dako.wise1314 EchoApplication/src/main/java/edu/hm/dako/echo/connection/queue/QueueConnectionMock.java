@@ -65,6 +65,9 @@ public class QueueConnectionMock implements Connection {
 
 	@Override
 	public Serializable receive() throws Exception {
+		if(messageIndex+1>pdus.size()){
+			messageIndex = 0;
+		}
 		Serializable obj = pdus.get(messageIndex);
 		messageIndex++;
 		return obj;
