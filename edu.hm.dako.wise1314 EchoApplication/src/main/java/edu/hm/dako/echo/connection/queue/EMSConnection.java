@@ -10,6 +10,7 @@ import javax.jms.QueueSession;
 import javax.jms.Session;
 import javax.jms.Queue;
 import javax.jms.QueueSender;
+import javax.jms.QueueReceiver;
 
 import com.tibco.tibjms.TibjmsQueueConnectionFactory;
 
@@ -59,19 +60,31 @@ public class EMSConnection implements Connection {
 		
 	}
 	
-	@Override
+	//QueueConnection wird beendet
 	public void close() throws Exception {
 		connection.close();
 
 	}
 
-	@Override
+	//objectmessage wird aus der Queue received
 	public Serializable receive() throws Exception {
-		// TODO Auto-generated method stub
+		QueueReceiver receiver = session.createReceiver(queue);
+		ObjectMessage objmsg;
+		while(true)
+		{
+			//alle received messages in Objectmessages umwandeln
+			objmsg = (ObjectMessage) receiver.receive();
+			if(objmsg == null)
+				break;
+			
+			System.err.println("Received message: "+objmsg);
+			
+			return (Serializable) objmsg; 
+		}
 		return null;
 	}
 
-	@Override
+	//Objectmessage wird an die Queue gesendet
 	public void send(Serializable message) throws Exception {
 		QueueSender sender = session.createSender(queue);
 		ObjectMessage objmsg = session.createObjectMessage();

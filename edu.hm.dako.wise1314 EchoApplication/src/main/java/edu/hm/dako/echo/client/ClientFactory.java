@@ -4,6 +4,7 @@ import edu.hm.dako.echo.benchmarking.UserInterfaceInputParameters;
 import edu.hm.dako.echo.common.SharedClientStatistics;
 import edu.hm.dako.echo.connection.ConnectionFactory;
 import edu.hm.dako.echo.connection.DecoratingConnectionFactory;
+import edu.hm.dako.echo.connection.queue.QueueConnectionFactory;
 import edu.hm.dako.echo.connection.tcp.TcpConnectionFactory;
 
 /**
@@ -29,6 +30,13 @@ public final class ClientFactory {
                             param.getRemoteServerAddress(), numberOfClient, param.getMessageLength(),
                             param.getNumberOfMessages(), param.getClientThinkTime(),
                             sharedData, getDecoratedFactory(new TcpConnectionFactory()));
+                    
+                //case für QueueMultiThread hier einbauen...
+                case QueueMultiThreaded:
+                	return new ConnectionReusingQueue(param.getRemoteServerPort(),
+                            param.getRemoteServerAddress(), numberOfClient, param.getMessageLength(),
+                            param.getNumberOfMessages(), param.getClientThinkTime(),
+                            sharedData, getDecoratedFactory(new QueueConnectionFactory()));
                 default:
                     throw new RuntimeException("Unknown type: " + param.getImplementationType());
             }

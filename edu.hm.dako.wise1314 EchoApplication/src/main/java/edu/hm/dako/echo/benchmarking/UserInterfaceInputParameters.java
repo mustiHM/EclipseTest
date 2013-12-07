@@ -61,6 +61,9 @@ public class UserInterfaceInputParameters {
             case TCPMultiThreaded:
                 returnString = "Multi-threaded TCP";
                 break;
+            case QueueMultiThreaded:
+            	returnString = "Mulit-threaded Queue";
+            	break;
             default:
                 break;
         }
