@@ -5,7 +5,7 @@ import edu.hm.dako.echo.connection.ConnectionFactory;
 
 public class QueueConnectionFactory implements ConnectionFactory {
 
-	@Override
+	
 	public Connection connectToServer(String remoteServerAddress,
 			int serverPort, int localPort) throws Exception {
 		EMSConnection connection = null;
