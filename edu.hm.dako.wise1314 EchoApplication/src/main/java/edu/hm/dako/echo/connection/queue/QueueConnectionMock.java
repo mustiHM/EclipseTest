@@ -45,8 +45,7 @@ public class QueueConnectionMock implements Connection {
 		messageIndex = 0;
 	}
 	
-	public QueueConnectionMock(String requestIP, int requestPort, String requestQueue, 
-			String responseIP, int responsePort, String responseQueue){
+	public QueueConnectionMock(String queueIP, int queuePort, String queueName){
 		/*
 		 * Da dieser Mock keine wirkliche Verbindung aufbauen muss, wird einfach nur eine Standart PDU erstellt,
 		 * die immer als simulierte erhaltene PDU weitergegeben wird.
@@ -67,11 +66,13 @@ public class QueueConnectionMock implements Connection {
 	@Override
 	public Serializable receive() throws Exception {
 		if(messageIndex+1>pdus.size()){
-			messageIndex = 0;
+			return null;
 		}
-		Serializable obj = pdus.get(messageIndex);
-		messageIndex++;
-		return obj;
+		else {
+			Serializable obj = pdus.get(messageIndex);
+			messageIndex++;
+			return obj;
+		}
 	}
 
 	@Override

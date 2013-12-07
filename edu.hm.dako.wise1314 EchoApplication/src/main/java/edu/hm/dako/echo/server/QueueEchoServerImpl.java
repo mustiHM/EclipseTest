@@ -1,13 +1,16 @@
 package edu.hm.dako.echo.server;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.PropertyConfigurator;
 
+import edu.hm.dako.echo.common.EchoPDU;
 import edu.hm.dako.echo.connection.Connection;
 import edu.hm.dako.echo.connection.ServerSocket;
+import edu.hm.dako.echo.connection.queue.QueueServerSocket;
 
 public class QueueEchoServerImpl implements EchoServer {
 
@@ -15,7 +18,7 @@ public class QueueEchoServerImpl implements EchoServer {
 
 	private final ExecutorService executorService;
 
-	private ServerSocket socket;
+	private QueueServerSocket socket; // da das Arbeiten mit der Queue anders ist als über TCP wird kein ServerSocket, sondern gleich der QueueServerSocket genutzt. 
 	
 	/**
 	 * Wird z.B. von der ServerFactory aufgerufen und richtet die Queue-Implementierung des Echo-Servers her.
@@ -24,7 +27,7 @@ public class QueueEchoServerImpl implements EchoServer {
 	 */
 	public QueueEchoServerImpl(ExecutorService executorService, ServerSocket socket){
         this.executorService = executorService;
-        this.socket = socket;
+        this.socket = (QueueServerSocket) socket;
 	}
 
 	public void start() {
@@ -33,25 +36,38 @@ public class QueueEchoServerImpl implements EchoServer {
 
         while (!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
         	try {
-				Connection connection = socket.accept(); 
+				
 				/*
 				 * Bei der QueueConnection wird an dieser Stelle keine Verbindung angenommen wie bei TCP.
 				 * Hier wird einfach eine Verbindung zur Queue hergestellt und gewartet bis ein Paket eintrifft.
 				 * Vorher bringt es nichts, unnötige Threads und Verbindungen aufzubauen.
 				 */
 				
-				
-				
-				
+        		Connection requestConnection = socket.accept();
+        		Connection responseConnection = socket.respond();
+        		
+        		// Neuen Workerthread starten
+                executorService.submit(new EchoWorker(requestConnection, responseConnection));
+        		
+        		
 			} catch (Exception e) {
 				e.printStackTrace();
-				log.error("Fehler beim Verbinden zur Queue");
+				log.error("Fehler beim Verbinden zu den Queues");
 			}
         }
 	}
 
 	public void stop() throws Exception {
-		// TODO Auto-generated method stub
+		System.out.println("EchoServer beendet sich");
+        Thread.currentThread().interrupt();
+        socket.close();
+        executorService.shutdown();
+        try {
+            executorService.awaitTermination(10, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            log.error("Das beenden des ExecutorService wurde unterbrochen");
+            e.printStackTrace();
+        }
 
 	}
 	
@@ -62,11 +78,43 @@ public class QueueEchoServerImpl implements EchoServer {
 	 */
 	private class EchoWorker implements Runnable {
 		
-		private Connection connection;
+		private Connection requestConnection;
+		private Connection responseConnection;
+		
+		private EchoWorker(Connection requestQueue, Connection responseQueue){
+			this.requestConnection = requestQueue;
+			this.responseConnection = responseQueue;
+		}
 		
 		public void run() {
+			// Abholen der Nachricht aus der Queue
+			try {
+				EchoPDU pdu = (EchoPDU) requestConnection.receive();
+				if(pdu != null){
+					// TODO weiterer Ablauf
+				}
+				
+			} catch (Exception e) {
+				e.printStackTrace();
+				log.error("Fehler beim Abholen aus der Request-Queue", e);
+			}
+			closeConnections();
+		}
+		
+		/**
+		 * Beendet alle Verbindungen zu den Queues
+		 */
+		private void closeConnections() {
+			try {
+				requestConnection.close();
+				responseConnection.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+				log.error("Fehler beim Schließen der Queue-Verbindungen", e);
+			}
 			
 		}
+		
 	}
 
 }
