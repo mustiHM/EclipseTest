@@ -92,6 +92,19 @@ public class QueueEchoServerImpl implements EchoServer {
 				EchoPDU pdu = (EchoPDU) requestConnection.receive();
 				if(pdu != null){
 					// TODO weiterer Ablauf
+					long startTime = System.currentTimeMillis(); // Zeit nehmen
+					
+					// mit Count-DB verbinden und Zähler erhöhen
+					
+					// mit Trace-DB verbinden und neuen Eintrag erstellen
+					
+					pdu.setMessage("das ist die Antwort des Servers");
+					pdu.setServerThreadName("EchoWorker");
+					
+					long serverTime = System.currentTimeMillis() - startTime;
+					pdu.setServerTime(serverTime);
+					
+					// Antwort in die Response-Queue schicken
 				}
 				
 			} catch (Exception e) {
