@@ -21,6 +21,8 @@ import java.awt.event.KeyEvent;
 import java.io.IOException;
 
 import javax.swing.UIManager;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class GUI {
 
@@ -57,19 +59,68 @@ public class GUI {
 	 * Initialize the contents of the frame.
 	 */
 	private void initialize() {
-		Admin_Client = new JFrame();
+		
+		/*
+		 * Fensterrahmen
+		 */
+		Admin_Client = new JFrame("Admin Service");
+		Admin_Client.getContentPane().setForeground(new Color(0, 0, 128));
+		
 		Admin_Client.getContentPane().setBackground(new Color(230, 230, 250));
 		Admin_Client.getContentPane().setLayout(null);
 		
-		ImageIcon iconBtnEingabe = new ImageIcon("images\\checkmark.png");
-		final JButton btnEingabe = new JButton("", iconBtnEingabe);
 		
-		btnEingabe.setBounds(345, 40, 79, 28);
+		/*
+		 * Anlegen des Icons für den Button btnEingabe
+		 */
+		ImageIcon iconBtnEingabe = new ImageIcon("images\\checkmark.png");
+		
+		/*
+		 * Erstellen eines Buttons btnEingabe, der die Eingegebene ID aus dem textField ausliest 
+		 */
+		final JButton btnEingabe = new JButton("", iconBtnEingabe);
+		btnEingabe.setBounds(345, 40, 49, 28);
 		btnEingabe.setEnabled(false);
 		Admin_Client.getContentPane().add(btnEingabe);
+		btnEingabe.addMouseListener(new MouseAdapter() {
+			// TODO
+			@Override
+			public void mouseClicked(MouseEvent arg0) {
+			}
+			
+		});
+		
+		
+	
+		/*
+		 * Button welcher alle Daten aus der Datenbank löschen soll
+		 */
+		JButton btnDeleteAll = new JButton("Daten l\u00F6schen");
+		btnDeleteAll.setForeground(new Color(0, 0, 128));
+		btnDeleteAll.setFont(new Font("Tahoma", Font.BOLD, 14));
+		btnDeleteAll.setBounds(120, 192, 200, 44);
+		Admin_Client.getContentPane().add(btnDeleteAll);
 		
 		
 		
+		/*
+		 * Textfeld welches zur Eingabe einer Client ID auffordert
+		 */
+		txtEingabeDerClient = new JTextField();
+		
+		txtEingabeDerClient.setForeground(new Color(0, 0, 128));
+		txtEingabeDerClient.setEditable(false);
+		txtEingabeDerClient.setFont(new Font("Corbel", Font.BOLD, 20));
+		txtEingabeDerClient.setBackground(new Color(230, 230, 250));
+		txtEingabeDerClient.setText("Eingabe der Client ID:");
+		txtEingabeDerClient.setBounds(24, 40, 224, 31);
+		txtEingabeDerClient.setBorder(null);
+		Admin_Client.getContentPane().add(txtEingabeDerClient);
+		txtEingabeDerClient.setColumns(10);
+		
+		/*
+		 * Keyadapter der bei Eingabe einer Zahl von 1-1000000 in textField den Button btnEingabe aktiviert
+		 */
 		KeyAdapter keyadapter = new KeyAdapter(){
 			public void keyTyped(KeyEvent event){
 				if(event.getSource() instanceof JTextField){
@@ -86,29 +137,21 @@ public class GUI {
 				}
 			}
 		};
-	
 		
-		JButton btnDeleteAll = new JButton("Daten l\u00F6schen");
-		btnDeleteAll.setBounds(120, 192, 200, 44);
-		
-		Admin_Client.getContentPane().add(btnDeleteAll);
-		
-		
-		txtEingabeDerClient = new JTextField();
-		txtEingabeDerClient.setForeground(new Color(0, 0, 128));
-		txtEingabeDerClient.setEditable(false);
-		txtEingabeDerClient.setFont(new Font("Corbel", Font.BOLD, 20));
-		txtEingabeDerClient.setBackground(new Color(230, 230, 250));
-		txtEingabeDerClient.setText("Eingabe der Client ID:");
-		txtEingabeDerClient.setBounds(10, 40, 224, 31);
-		Admin_Client.getContentPane().add(txtEingabeDerClient);
-		txtEingabeDerClient.setColumns(10);
-		
+		/*
+		 * Textfeld in welches eine Client ID eingegeben wird
+		 */
 		textField = new JTextField();
-		textField.setBounds(258, 40, 77, 31);
+		textField.setBorder(null);
+		textField.setForeground(SystemColor.windowBorder);
+		textField.setFont(new Font("Arial", Font.BOLD, 20));
+		textField.setBounds(258, 40, 77, 28);
 		textField.setColumns(10);
 		textField.addKeyListener(keyadapter);
 		Admin_Client.getContentPane().add(textField);
+		
+		
+		
 		
 		
 		txtAnzahlDerNachrichten = new JTextField();
@@ -117,18 +160,22 @@ public class GUI {
 		txtAnzahlDerNachrichten.setForeground(new Color(0, 0, 128));
 		txtAnzahlDerNachrichten.setFont(new Font("Corbel", Font.BOLD, 20));
 		txtAnzahlDerNachrichten.setText("Anzahl der Nachrichten:");
-		txtAnzahlDerNachrichten.setBounds(10, 102, 224, 31);
+		txtAnzahlDerNachrichten.setBounds(24, 101, 224, 31);
 		txtAnzahlDerNachrichten.setColumns(10);
+		txtAnzahlDerNachrichten.setBorder(null);
 		Admin_Client.getContentPane().add(txtAnzahlDerNachrichten);
 		
 		
 		textField_1 = new JTextField();
+		textField_1.setForeground(SystemColor.windowBorder);
+		textField_1.setFont(new Font("Arial", Font.BOLD, 20));
 		textField_1.setEditable(false);
-		textField_1.setBackground(UIManager.getColor("Button.background"));
-		textField_1.setBounds(258, 102, 77, 31);
+		textField_1.setBackground(new Color(230, 230, 250));
+		textField_1.setBounds(258, 102, 77, 28);
 		textField_1.setColumns(10);
+		textField_1.setBorder(null);
 		Admin_Client.getContentPane().add(textField_1);
-		textField.setBackground(UIManager.getColor(textField_1));
+		textField.setBackground(SystemColor.menu);
 		
 		Admin_Client.setBounds(100, 100, 450, 300);
 		Admin_Client.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
