@@ -84,6 +84,9 @@ public class QueueEchoServerImpl implements EchoServer {
 		private EchoWorker(Connection requestQueue, Connection responseQueue){
 			this.requestConnection = requestQueue;
 			this.responseConnection = responseQueue;
+			
+			// Anlegen der XA-Ressourcen
+			
 		}
 		
 		public void run() {
