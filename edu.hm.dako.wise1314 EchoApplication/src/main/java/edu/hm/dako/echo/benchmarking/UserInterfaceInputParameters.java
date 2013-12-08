@@ -39,9 +39,9 @@ public class UserInterfaceInputParameters {
         clientThinkTime = 1;
         messageLength = 50;
         numberOfMessages = 5;
-        remoteServerPort = 50000;
-        remoteServerAddress = "127.0.0.1";
-        implementationType = ImplementationType.TCPSingleThreaded;
+        remoteServerPort = 7222; //50000
+        remoteServerAddress = "192.168.56.1"; //"127.0.0.1"
+        implementationType = ImplementationType.QueueMultiThreaded; //ImplementationType.TCPSingleThreaded
         measurementType = MeasurementType.VarThreads;
     }
 
@@ -62,7 +62,7 @@ public class UserInterfaceInputParameters {
                 returnString = "Multi-threaded TCP";
                 break;
             case QueueMultiThreaded:
-            	returnString = "Mulit-threaded Queue";
+            	returnString = "Multi-threaded Queue";
             	break;
             default:
                 break;
