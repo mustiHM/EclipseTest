@@ -11,6 +11,15 @@ import edu.hm.dako.echo.common.EchoPDU;
 import edu.hm.dako.echo.connection.Connection;
 import edu.hm.dako.echo.connection.ServerSocket;
 import edu.hm.dako.echo.connection.queue.QueueServerSocket;
+import edu.hm.dako.echo.database.DBConnector;
+
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.transaction.UserTransaction;
 
 public class QueueEchoServerImpl implements EchoServer {
 
@@ -80,12 +89,49 @@ public class QueueEchoServerImpl implements EchoServer {
 		
 		private Connection requestConnection;
 		private Connection responseConnection;
+		private DBConnector dbConnector;
+		private java.sql.Connection dbConnection;
+		
+		private static final String USAGE = "usage: java JdbcExample [database] [commit|rollback] [number]";
+	    private static final String SQL_SELECT = "select number from counter where client_id = ?";
+	    private static final String SQL_UPDATE = "update counter set number = ? where id = ?";
+	    private static final String USER_TRANSACTION_JNDI_NAME = "UserTransaction";
 		
 		private EchoWorker(Connection requestQueue, Connection responseQueue){
 			this.requestConnection = requestQueue;
 			this.responseConnection = responseQueue;
 			
 			// Anlegen der XA-Ressourcen
+			
+		}
+		
+		/**
+		 * Liest die Anzahl an Nachrichten eines Clients aus der DB
+		 * @param clientId die ClientID
+		 * @return Anzahl der Nachrichten
+		 */
+		private int getNumberForClient(String clientId){
+			
+			int number = 0;
+			try {
+	            PreparedStatement pstmt = dbConnection.prepareStatement(SQL_SELECT);
+	            pstmt.setString(1, clientId);
+	            ResultSet rset = pstmt.executeQuery();
+	            int numcols = rset.getMetaData().getColumnCount();
+	            while (rset.next()) {
+	                for (int i = 1; i <= numcols; i++) {
+	                    number = rset.getInt(i);
+	                }
+	            }
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	        }
+			
+			
+			return number;
+		}
+		
+		private void updateNumberForClient(String clientId, int number){
 			
 		}
 		
@@ -96,6 +142,40 @@ public class QueueEchoServerImpl implements EchoServer {
 				if(pdu != null){
 					// TODO weiterer Ablauf
 					long startTime = System.currentTimeMillis(); // Zeit nehmen
+					
+					dbConnector = new DBConnector("root", "Password", "CountDB", "jdbc:mysql://localhost/CountDB");
+					
+					UserTransaction utx = null;
+			        try {
+			            System.out.println("create initial context");
+			            Context ictx = new InitialContext();
+			            System.out.println("lookup UserTransaction at : " + USER_TRANSACTION_JNDI_NAME);
+			            utx = (UserTransaction) ictx.lookup(USER_TRANSACTION_JNDI_NAME);
+			        } catch (Exception e) {
+			            System.out.println("Exception of type :" + e.getClass().getName() + " has been thrown");
+			            System.out.println("Exception message :" + e.getMessage());
+			            e.printStackTrace();
+			            System.exit(1);
+			        }
+			        
+			        dbConnection = dbConnector.getConnection();
+			        
+			        utx.begin();
+			        int oldNumber = getNumberForClient(pdu.getClientName());
+			        
+			        // TODO update statement
+			        
+			        utx.commit();
+			        
+			        utx = null;
+			        
+			        dbConnection.close();
+			        dbConnection = null;
+			        
+			        dbConnector.stop();
+			        
+			        
+					
 					
 					// mit Count-DB verbinden und Zähler erhöhen
 					

@@ -1,13 +1,16 @@
 package edu.hm.dako.echo.database;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+
 import javax.naming.InitialContext;
+import javax.sql.XAConnection;
 import javax.sql.XADataSource;
 
 import org.enhydra.jdbc.standard.StandardXADataSource;
 import org.objectweb.jotm.Jotm;
 import org.objectweb.transaction.jta.TMService;
 
-import com.mysql.jdbc.jdbc2.optional.MysqlXADataSource;
 
 
 
@@ -51,9 +54,24 @@ public class DBConnector {
         ((StandardXADataSource) xads).setUrl(url);
         ((StandardXADataSource) xads).setTransactionManager(jotm.getTransactionManager());
         
-        // TODO weitere Impl.
 	}
+	
+	public Connection getConnection() throws SQLException {
+        XAConnection xaconn = xads.getXAConnection(userName, password);
+        return xaconn.getConnection();
+    }
 
+	public void stop() {
+    	xads = null;
+        try {
+           InitialContext ictx = new InitialContext();
+           ictx.unbind(USER_TRANSACTION_JNDI_NAME);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        jotm.stop();
+        jotm = null;
+    }
 	
 	
 }
