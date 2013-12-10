@@ -21,8 +21,15 @@ import java.awt.event.KeyEvent;
 import java.io.IOException;
 
 import javax.swing.UIManager;
+
+import edu.hm.dako.echo.admin.service.AdminService;
+import edu.hm.dako.echo.admin.service.impl.AdminServiceMock;
+
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import javax.swing.JLabel;
 
 public class GUI {
 
@@ -31,7 +38,8 @@ public class GUI {
 	private JTextField textField;
 	private JTextField txtAnzahlDerNachrichten;
 	private JTextField textField_1;
-
+	private AdminService adminService;
+	private JLabel lblLöschstatus;
 	/**
 	 * Launch the application.
 	 */
@@ -59,6 +67,8 @@ public class GUI {
 	 * Initialize the contents of the frame.
 	 */
 	private void initialize() {
+		
+		adminService = new AdminServiceMock();
 		
 		/*
 		 * Fensterrahmen
@@ -96,9 +106,29 @@ public class GUI {
 		 * Button welcher alle Daten aus der Datenbank löschen soll
 		 */
 		JButton btnDeleteAll = new JButton("Daten l\u00F6schen");
+		
 		btnDeleteAll.setForeground(new Color(0, 0, 128));
 		btnDeleteAll.setFont(new Font("Tahoma", Font.BOLD, 14));
 		btnDeleteAll.setBounds(120, 192, 200, 44);
+		
+		btnDeleteAll.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				boolean deleted;
+				deleted = adminService.deleteAllData();
+				if (deleted == true){
+					lblLöschstatus.setForeground(Color.green);
+					lblLöschstatus.setText("Alle Daten wurden erfolgreich gelöscht!");
+					lblLöschstatus.setFont(new Font("Corbel", Font.BOLD, 20));
+					
+				}
+				else{
+					lblLöschstatus.setForeground(Color.RED);
+					lblLöschstatus.setText("Daten konnten nicht gelöscht werden!");
+					lblLöschstatus.setFont(new Font("Corbel", Font.BOLD, 20));
+				}
+			}
+		});
+		
 		Admin_Client.getContentPane().add(btnDeleteAll);
 		
 		
@@ -127,8 +157,9 @@ public class GUI {
 					JTextField txtfld = (JTextField) event.getSource();
 					int result = 0;
 					try {
-						result = Integer.parseInt(txtfld.getText());
-						if (result>=0 && result <= 1000000){
+						String txtContent = txtfld.getText();
+						result = (txtContent.length());
+						if (result >= 0){
 							btnEingabe.setEnabled(true);
 						
 						}
@@ -137,6 +168,9 @@ public class GUI {
 				}
 			}
 		};
+		
+		
+		
 		
 		/*
 		 * Textfeld in welches eine Client ID eingegeben wird
@@ -176,6 +210,10 @@ public class GUI {
 		textField_1.setBorder(null);
 		Admin_Client.getContentPane().add(textField_1);
 		textField.setBackground(SystemColor.menu);
+		
+		lblLöschstatus = new JLabel("");
+		lblLöschstatus.setBounds(34, 143, 400, 28);
+		Admin_Client.getContentPane().add(lblLöschstatus);
 		
 		Admin_Client.setBounds(100, 100, 450, 300);
 		Admin_Client.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
