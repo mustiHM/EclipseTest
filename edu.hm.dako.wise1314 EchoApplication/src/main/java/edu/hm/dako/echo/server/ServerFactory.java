@@ -48,7 +48,14 @@ public final class ServerFactory {
     }
 
     private static ServerSocket getDecoratedServerSocket(ServerSocket serverSocket) {
-        return new DecoratingServerSocket(serverSocket);
+        // da die QueueConnection ein Sonderfall ist, wird sie hier direkt zurückgegeben
+    	if(serverSocket instanceof QueueServerSocket){
+        	return serverSocket;
+        }
+        else{
+        	return new DecoratingServerSocket(serverSocket);
+        }
+    	
     }
 
     /**
@@ -64,7 +71,7 @@ public final class ServerFactory {
          * Im ImplementationType der naechsten Anweisungen muss der Server, 
     	 * der gestartet werden soll, angegeben werden, hier nur TCPSingleThreaded und TCPMultiThreaded implementiert
          */   	
-        getServer(UserInterfaceInputParameters.ImplementationType.TCPMultiThreaded).start();
+        getServer(UserInterfaceInputParameters.ImplementationType.QueueMultiThreaded).start();
     }
 
     private static class DecoratingServerSocket implements ServerSocket {

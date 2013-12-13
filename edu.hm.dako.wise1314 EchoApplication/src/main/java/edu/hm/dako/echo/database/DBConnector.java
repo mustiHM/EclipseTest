@@ -7,9 +7,13 @@ import javax.naming.InitialContext;
 import javax.sql.XAConnection;
 import javax.sql.XADataSource;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.enhydra.jdbc.standard.StandardXADataSource;
 import org.objectweb.jotm.Jotm;
 import org.objectweb.transaction.jta.TMService;
+
+import edu.hm.dako.echo.server.QueueEchoServerImpl;
 
 
 
@@ -22,6 +26,7 @@ import org.objectweb.transaction.jta.TMService;
  */
 public class DBConnector {
 	
+	private static Log log = LogFactory.getLog(DBConnector.class);
 	private String userName;
 	private String password;
 	private String databaseName;
@@ -38,21 +43,28 @@ public class DBConnector {
 		
 		// Get a transction manager       
         try {
-        	
+        	log.debug("Versuche JOTM anzulegen..");
         	// creates an instance of JOTM with a local transaction factory which is not bound to a registry
             jotm = new Jotm(true, false);
+            log.debug("JOTM angelegt, versuche Context anzulegen..");
             InitialContext ictx = new InitialContext();
+            log.debug("Context angelegt, versuche Rebind..");
             ictx.rebind(USER_TRANSACTION_JNDI_NAME, jotm.getUserTransaction());
+            log.debug("Rebind erfolgreich");
             
         } catch (Exception e){
         	e.printStackTrace();
         }
         
+        log.debug("versuche XA DB zu bekommen..");
         xads = new StandardXADataSource();
+        log.debug("XA DB bekommen, versuche Treiber zu setzen..");
         ((StandardXADataSource) xads).setDriverName("org.gjt.mm.mysql.Driver");
         // url in diesem Format: jdbc:mysql://localhost/javatest
         ((StandardXADataSource) xads).setUrl(url);
+        log.debug("Treiber und URL gesetzt, versuche Manager zu setzen..");
         ((StandardXADataSource) xads).setTransactionManager(jotm.getTransactionManager());
+        log.debug("JOTM Manager gesetzt");
         
 	}
 	
