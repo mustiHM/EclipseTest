@@ -32,6 +32,7 @@ public class QueueEchoServerImpl implements EchoServer {
 	private QueueServerSocket realSocket;// da das Arbeiten mit der Queue anders ist als über TCP wird kein ServerSocket, sondern gleich der QueueServerSocket genutzt. 
 	
 	private DBConnector dbConnector;
+	private java.sql.Connection dbConnection;
 	
 	/**
 	 * Wird z.B. von der ServerFactory aufgerufen und richtet die Queue-Implementierung des Echo-Servers her.
@@ -54,14 +55,15 @@ public class QueueEchoServerImpl implements EchoServer {
 
         log.info("DB Objekt wird initiiert");
 		try {
-			dbConnector = new DBConnector("app", "password", "countdb", "jdbc:mysql://127.0.0.1:3306/countdb");
+			dbConnector = new DBConnector("root", "Unw39XaL", "countdb", "jdbc:mysql://localhost/countdb");
+			dbConnection = dbConnector.getConnection();
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
 		log.info("DB Objekt initiiert");
         
         int i=0;
-        while (!Thread.currentThread().isInterrupted() && !socket.isClosed() && i<1) {
+        while (!Thread.currentThread().isInterrupted() && !socket.isClosed() && i<105) {
         	try {
 				
 				/*
@@ -112,11 +114,11 @@ public class QueueEchoServerImpl implements EchoServer {
 		private Connection requestConnection;
 		private Connection responseConnection;
 		
-		private java.sql.Connection dbConnection;
+		
 		
 		private static final String USAGE = "usage: java JdbcExample [database] [commit|rollback] [number]";
 	    private static final String SQL_SELECT = "select number from counter where client_id = ?";
-	    private static final String SQL_UPDATE = "update counter set number = number+1 where id = ?";
+	    private static final String SQL_UPDATE = "update counter set number = number+1 where client_id = ?";
 	    private static final String SQL_INSERT = "insert into counter(client_id, number) values (?,?);";
 	    private static final String USER_TRANSACTION_JNDI_NAME = "UserTransaction";
 		
@@ -209,7 +211,7 @@ public class QueueEchoServerImpl implements EchoServer {
 			            System.exit(1);
 			        }
 			        
-			        dbConnection = dbConnector.getConnection();
+			        //dbConnection = dbConnector.getConnection();
 			        if(dbConnection == null){
 			        	log.error("Keine DB Verbindung");
 			        }
@@ -234,10 +236,10 @@ public class QueueEchoServerImpl implements EchoServer {
 			        
 			        utx = null;
 			        
-			        dbConnection.close();
-			        dbConnection = null;
+			        //dbConnection.close();
+			        //dbConnection = null;
 			        
-			        dbConnector.stop();
+			        //dbConnector.stop();
 			        
 					// mit Trace-DB verbinden und neuen Eintrag erstellen
 					
