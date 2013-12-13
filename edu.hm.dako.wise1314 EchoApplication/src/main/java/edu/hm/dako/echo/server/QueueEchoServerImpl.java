@@ -28,16 +28,16 @@ public class QueueEchoServerImpl implements EchoServer {
 
 	private final ExecutorService executorService;
 
-	private QueueServerSocket socket;
-	private QueueServerSocket realSocket;// da das Arbeiten mit der Queue anders ist als über TCP wird kein ServerSocket, sondern gleich der QueueServerSocket genutzt. 
+	private QueueServerSocket socket;// da das Arbeiten mit der Queue anders ist als über TCP wird kein ServerSocket, sondern gleich der QueueServerSocket genutzt. 
 	
-	private DBConnector dbConnector;
-	private java.sql.Connection dbConnection;
-	
+	private DBConnector dbConnectorCountDB;
+	private DBConnector dbConnectorTraceDB;
+	private java.sql.Connection dbConnectionCountDB;
+	private java.sql.Connection dbConnectionTraceDB;
 	/**
 	 * Wird z.B. von der ServerFactory aufgerufen und richtet die Queue-Implementierung des Echo-Servers her.
 	 * @param executorService der Executor-Service für die Thread-Steuerung
-	 * @param socket das Socket durch dem die Packet empfangen werden sollen
+	 * @param socket das Socket durch dem die Packete empfangen werden sollen
 	 */
 	public QueueEchoServerImpl(ExecutorService executorService, ServerSocket socket){
         this.executorService = executorService;
@@ -53,15 +53,19 @@ public class QueueEchoServerImpl implements EchoServer {
 		PropertyConfigurator.configureAndWatch("log4j.server.properties", 60 * 1000);
         System.out.println("Echoserver wartet auf PDUs aus der Request Queue...");
 
-        log.info("DB Objekt wird initiiert");
+        log.info("DB Objekte werden initiiert");
 		try {
-			dbConnector = new DBConnector("root", "Unw39XaL", "countdb", "jdbc:mysql://localhost/countdb");
-			dbConnection = dbConnector.getConnection();
+			dbConnectorCountDB = new DBConnector("app", "passwort", "countdb", "jdbc:mysql://localhost/countdb");
+			dbConnectionCountDB = dbConnectorCountDB.getConnection();
+			dbConnectorTraceDB = new DBConnector("app", "passwort", "tracedb", "jdbc:mysql://localhost/tracedb");
+			dbConnectionTraceDB = dbConnectorTraceDB.getConnection();
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
-		log.info("DB Objekt initiiert");
+		log.info("DB Objekte initiiert");
         
+		//TODO aufm VM entfernen
+		// fürs lokalte Testen wird hier ein Zähler gesetzt, der dafür sorgt, dass nur 105 Threads erstellt werden
         int i=0;
         while (!Thread.currentThread().isInterrupted() && !socket.isClosed() && i<105) {
         	try {
@@ -78,8 +82,8 @@ public class QueueEchoServerImpl implements EchoServer {
         		// Neuen Workerthread starten
                 executorService.submit(new EchoWorker(requestConnection, responseConnection));
                 
-             // fürs lokale Testen wird hier eine kleine Schlafpause eingebaut, damit unsere Rechner nicht abrauchen (auf VM ggf. entfernen)
-                Thread.sleep(1000);
+             // fürs lokale Testen wird hier eine kleine Schlafpause eingebaut, damit unsere Rechner nicht abrauchen (auf VM entfernen)
+                Thread.sleep(500);
                 i++;
         		
         		
@@ -88,11 +92,22 @@ public class QueueEchoServerImpl implements EchoServer {
 				log.error("Fehler beim Verbinden zu den Queues");
 			}
         }
+        
+        
 	}
 
 	public void stop() throws Exception {
 		System.out.println("EchoServer beendet sich");
+		log.info("EchoServer wird beendet..");
         Thread.currentThread().interrupt();
+        dbConnectionCountDB.close();
+        dbConnectionCountDB = null;
+        dbConnectionTraceDB.close();
+        dbConnectionTraceDB = null;
+        
+        dbConnectorCountDB.stop();
+        dbConnectorTraceDB.stop();
+        
         socket.close();
         executorService.shutdown();
         try {
@@ -102,6 +117,7 @@ public class QueueEchoServerImpl implements EchoServer {
             e.printStackTrace();
         }
 
+        log.info("alle Verbindungen wurden beendet, der EchoServer wird jetzt beendet.");
 	}
 	
 	/**
@@ -116,18 +132,31 @@ public class QueueEchoServerImpl implements EchoServer {
 		
 		
 		
-		private static final String USAGE = "usage: java JdbcExample [database] [commit|rollback] [number]";
-	    private static final String SQL_SELECT = "select number from counter where client_id = ?";
-	    private static final String SQL_UPDATE = "update counter set number = number+1 where client_id = ?";
-	    private static final String SQL_INSERT = "insert into counter(client_id, number) values (?,?);";
+		private static final String SQL_SELECT_NUMBER = "select number from counter where client_id = ?";
+	    private static final String SQL_UPDATE_NUMBER = "update counter set number = number+1 where client_id = ?";
+	    private static final String SQL_INSERT_COUNTER = "insert into counter(client_id, number) values (?,?);";
+	    private static final String SQL_INSERT_LOGS = "insert into logs(client_name, request) values (?,?);";
 	    private static final String USER_TRANSACTION_JNDI_NAME = "UserTransaction";
 		
 		private EchoWorker(Connection requestQueue, Connection responseQueue){
 			this.requestConnection = requestQueue;
 			this.responseConnection = responseQueue;
-			
-			// Anlegen der XA-Ressourcen
-			
+		}
+		
+		/**
+		 * Speichert einen Log-Eintrag zu einem Request-PDU in die Datenbank.
+		 * @param clientName Name des Clients
+		 * @param message die Nachricht des Clients
+		 */
+		private void insertTrace(String clientName, String message){
+			try {
+				PreparedStatement pstmt = dbConnectionTraceDB.prepareStatement(SQL_INSERT_LOGS);
+				pstmt.setString(1, clientName);
+				pstmt.setString(2, message);
+				pstmt.executeUpdate();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 		
 		/**
@@ -137,7 +166,7 @@ public class QueueEchoServerImpl implements EchoServer {
 		 */
 		private void insertClient(String clientId, int number){
 			try {
-				PreparedStatement pstmt = dbConnection.prepareStatement(SQL_INSERT);
+				PreparedStatement pstmt = dbConnectionCountDB.prepareStatement(SQL_INSERT_COUNTER);
 				pstmt.setString(1, clientId);
 				pstmt.setInt(2, number);
 				pstmt.executeUpdate();
@@ -154,7 +183,7 @@ public class QueueEchoServerImpl implements EchoServer {
 			
 			int number = 0;
 			try {
-	            PreparedStatement pstmt = dbConnection.prepareStatement(SQL_SELECT);
+	            PreparedStatement pstmt = dbConnectionCountDB.prepareStatement(SQL_SELECT_NUMBER);
 	            pstmt.setString(1, clientId);
 	            ResultSet rset = pstmt.executeQuery();
 	            int numcols = rset.getMetaData().getColumnCount();
@@ -178,7 +207,7 @@ public class QueueEchoServerImpl implements EchoServer {
 		 */
 		private void increaseNumberForClient(String clientId){
 			try {
-				PreparedStatement pstmt = dbConnection.prepareStatement(SQL_UPDATE);
+				PreparedStatement pstmt = dbConnectionCountDB.prepareStatement(SQL_UPDATE_NUMBER);
 				pstmt.setString(1, clientId);
 				pstmt.executeUpdate();
 			} catch (SQLException e) {
@@ -192,7 +221,7 @@ public class QueueEchoServerImpl implements EchoServer {
 				log.info("Worker-Thread wartet auf Requests..");
 				EchoPDU pdu = (EchoPDU) requestConnection.receive();
 				if(pdu != null){
-					// TODO weiterer Ablauf
+					
 					log.info("Worker-Thread hat was erhalten..");
 					long startTime = System.currentTimeMillis(); // Zeit nehmen
 					
@@ -211,12 +240,11 @@ public class QueueEchoServerImpl implements EchoServer {
 			            System.exit(1);
 			        }
 			        
-			        //dbConnection = dbConnector.getConnection();
-			        if(dbConnection == null){
+			        if(dbConnectionCountDB == null || dbConnectionTraceDB == null){
 			        	log.error("Keine DB Verbindung");
 			        }
 			        else{
-			        	log.debug("DB Verbindung erstellt");
+			        	log.debug("DB Verbindungen erstellt");
 			        }
 			        
 			        utx.begin();
@@ -232,16 +260,13 @@ public class QueueEchoServerImpl implements EchoServer {
 			        	increaseNumberForClient(pdu.getClientName());
 			        }
 			        
+			        // mit Trace-DB verbinden und neuen Eintrag erstellen
+			        insertTrace(pdu.getClientName(), pdu.getMessage());
+			        
 			        utx.commit();
 			        
 			        utx = null;
 			        
-			        //dbConnection.close();
-			        //dbConnection = null;
-			        
-			        //dbConnector.stop();
-			        
-					// mit Trace-DB verbinden und neuen Eintrag erstellen
 					
 					pdu.setMessage("das ist die Antwort des Servers");
 					pdu.setServerThreadName("EchoWorker");
