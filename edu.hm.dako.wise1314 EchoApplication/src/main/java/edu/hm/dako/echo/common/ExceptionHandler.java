@@ -33,7 +33,8 @@ public class ExceptionHandler {
         } catch (ClassNotFoundException e) {
             log.error("Empfangene Objektklasse nicht bekannt:" + e);
         } catch (Exception e) {
-            log.error("Schwerwiegender Fehler");
+            log.error(e);
+        	log.error("Schwerwiegender Fehler");
         }
         // exception.printStackTrace();
         if (terminateVm) {

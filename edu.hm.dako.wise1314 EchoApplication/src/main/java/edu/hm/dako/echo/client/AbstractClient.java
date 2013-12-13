@@ -12,7 +12,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public abstract class AbstractClient implements Runnable {
 
-    private static Log log = LogFactory.getLog(AbstractClient.class);
+    public static Log log = LogFactory.getLog(AbstractClient.class);
 
     protected String threadName;
 

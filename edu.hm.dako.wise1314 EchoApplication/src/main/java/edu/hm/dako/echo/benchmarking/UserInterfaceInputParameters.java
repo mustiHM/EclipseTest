@@ -40,7 +40,7 @@ public class UserInterfaceInputParameters {
         messageLength = 50;
         numberOfMessages = 5;
         remoteServerPort = 7222; //50000
-        remoteServerAddress = "192.168.56.1"; //"127.0.0.1"
+        remoteServerAddress = "localhost"; //"127.0.0.1"
         implementationType = ImplementationType.QueueMultiThreaded; //ImplementationType.TCPSingleThreaded
         measurementType = MeasurementType.VarThreads;
     }

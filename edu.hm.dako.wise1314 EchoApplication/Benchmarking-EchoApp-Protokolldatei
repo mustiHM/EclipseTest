@@ -256,3 +256,4 @@ Variation der Threadanzahl, Multi-threaded TCP, 100, 2, 2, 1, 0, 10000, 10000, 1
 Variation der Threadanzahl, Multi-threaded TCP, 100, 2, 3, 0, 0, 10000, 10000, 10000, 0, 26, 1.10.2013 16:37:25, 1.10.2013 16:37:36
 Variation der Threadanzahl, Single-threaded TCP, 2, 29, 29, 28, 0, 10, 10, 10, 0, 4, 10.10.2013 16:21:0, 10.10.2013 16:21:0
 Variation der Threadanzahl, Single-threaded TCP, 10, 9, 11, 7, 1, 1000, 1000, 1000, 0, 18, 10.10.2013 16:22:2, 10.10.2013 16:22:14
+Variation der Threadanzahl, Multi-threaded Queue, 1, 0, 0, 9223372036854, 0, 10, 10, 0, 10, 0, 13.12.2013 18:33:40, 13.12.2013 18:33:41

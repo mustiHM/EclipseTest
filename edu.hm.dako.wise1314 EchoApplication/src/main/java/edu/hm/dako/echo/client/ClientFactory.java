@@ -31,7 +31,7 @@ public final class ClientFactory {
                             param.getNumberOfMessages(), param.getClientThinkTime(),
                             sharedData, getDecoratedFactory(new TcpConnectionFactory()));
                     
-                //case für QueueMultiThread hier einbauen...
+                //case für QueueMultiThread
                 case QueueMultiThreaded:
                 	return new ConnectionReusingQueue(param.getRemoteServerPort(),
                             param.getRemoteServerAddress(), numberOfClient, param.getMessageLength(),
