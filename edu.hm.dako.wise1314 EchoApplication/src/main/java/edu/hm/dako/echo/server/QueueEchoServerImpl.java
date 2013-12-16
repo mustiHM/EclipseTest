@@ -18,6 +18,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import javax.jms.JMSException;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.transaction.UserTransaction;
@@ -77,7 +78,7 @@ public class QueueEchoServerImpl implements EchoServer {
 				 */
 				
         		Connection requestConnection = socket.accept();
-        		Connection responseConnection = socket.respond();
+        		Connection responseConnection = socket.respond(null); // muss vom Worker-Thread dynamisch richtig erstellt werden, sonst greift die Standart-Queue
         		
         		// Neuen Workerthread starten
                 executorService.submit(new EchoWorker(requestConnection, responseConnection));
@@ -225,6 +226,10 @@ public class QueueEchoServerImpl implements EchoServer {
 					log.info("Worker-Thread hat was erhalten..");
 					long startTime = System.currentTimeMillis(); // Zeit nehmen
 					
+					// ResponseQueue für den Client dynamisch erstellen
+					responseConnection = socket.respond(pdu.getClientName());
+					
+					
 					UserTransaction utx = null;
 			        try {
 			            System.out.println("create initial context");
@@ -263,7 +268,13 @@ public class QueueEchoServerImpl implements EchoServer {
 			        // mit Trace-DB verbinden und neuen Eintrag erstellen
 			        insertTrace(pdu.getClientName(), pdu.getMessage());
 			        
-			        utx.commit();
+			        try {
+			        	utx.commit();
+			        } catch (Exception e){
+			        	log.error("Fehler beim DB Commit" + e);
+			        	log.info("Verschicke Packet wieder zurück in die Request-Queue");
+						requestConnection.send(pdu);
+			        }
 			        
 			        utx = null;
 			        
@@ -275,12 +286,14 @@ public class QueueEchoServerImpl implements EchoServer {
 					pdu.setServerTime(serverTime);
 					
 					// Antwort in die Response-Queue schicken
+					responseConnection.send(pdu);
 				}
 				else{
 					log.info("Worker-Thread hat nichts erhalten..");
 				}
 				
-			} catch (Exception e) {
+			} 
+			catch (Exception e) {
 				e.printStackTrace();
 				log.error("Fehler beim Abholen aus der Request-Queue", e);
 			}

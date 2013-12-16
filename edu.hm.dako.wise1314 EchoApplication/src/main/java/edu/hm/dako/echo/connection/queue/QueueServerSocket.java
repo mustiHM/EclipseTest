@@ -52,11 +52,17 @@ public class QueueServerSocket implements ServerSocket {
 	}
 	
 	/**
-	 * Gibt eine Verbindung zur richtigen Response-Queue zurück
+	 * Gibt eine Verbindung zur richtigen Response-Queue zurück.
+	 * Falls kein neuer Name angegeben wird, wird die Standard Queue zurückgegeben.
+	 * @param Name der Queue bzw. des Clients
 	 * @return Verbindung zur Response-Queue
 	 */
-	public Connection respond(){
-		return responseConnection;
+	public Connection respond(String queueNameForClient){
+		if(queueNameForClient==null)
+			return responseConnection;
+		else{
+			return new QueueConnectionMock(responseIP, responsePort, queueNameForClient);
+		}
 	}
 
 }
