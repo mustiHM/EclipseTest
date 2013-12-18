@@ -12,6 +12,7 @@ import edu.hm.dako.echo.common.SharedClientStatistics;
 import edu.hm.dako.echo.connection.Connection;
 import edu.hm.dako.echo.connection.ConnectionFactory;
 import edu.hm.dako.echo.connection.queue.EMSConnection;
+import edu.hm.dako.echo.connection.queue.QueueConnectionFactory;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -24,15 +25,13 @@ public class ConnectionReusingQueue extends AbstractClient {
 	
 	private static Log Log = LogFactory.getLog(ConnectionReusingQueue.class);
 	
-	private Connection connection;
+	private Connection requestConnection;
+	private Connection responseConnection;
 	
-	private static boolean isInitiated = false;
+	private QueueConnectionFactory factory;
 	
-	private Session session = null; 
-	private Destination destinationSender = null;
-    private Destination destinationReceiver = null;
-    
-    private long rttStartTime;
+	private long rttStartTime;
+	private String clientName;
 	
 	// wird von der ClientFactory verwendet und richtet die Queue-Implementierung des AbstractClients her
 	public ConnectionReusingQueue(int serverPort, String remoteServerAddress, int numberOfClient,
@@ -40,28 +39,25 @@ public class ConnectionReusingQueue extends AbstractClient {
                                    SharedClientStatistics sharedData, ConnectionFactory connectionFactory) {
 		super(serverPort, remoteServerAddress, numberOfClient, messageLength, numberOfMessages, clientThinkTime,
                 sharedData, connectionFactory);
-		//if(!isInitiated){
 			try {
+				clientName = "Client-Thread-" + clientNumber;
 				//Gilt nur für den ersten Thread, danach wird keine Connection mehr aufgebaut sonst kam immer ein Fehler und ein Mutlithread hat gekracht!
 				log.debug("Für den ersten Thread wird eine Connection aufgebaut..."); 
-				connection = connectionFactory.connectToServer(remoteServerAddress, serverPort, localPort);
-				log.debug("Connection aufgebaut"); 
+				requestConnection = connectionFactory.connectToServer(remoteServerAddress, serverPort, localPort);
+				log.debug("Connection aufgebaut");
+				if(connectionFactory instanceof QueueConnectionFactory){
+					factory = (QueueConnectionFactory) connectionFactory;
+					responseConnection = factory.acceptFromServer(remoteServerAddress, serverPort, clientName);
+				}
+				else {
+					throw new Exception("Falsche QueueFactory!");
+				}
 				
 				
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 			
-		//}
-//		try {
-//			session = connection.createSession();
-//			destinationSender = connection.createDestinationSender();
-//			destinationReceiver = connection.createDestinationReceiver();
-//			
-//		} catch (JMSException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
 	}
 	
 	
@@ -70,7 +66,7 @@ public class ConnectionReusingQueue extends AbstractClient {
      */
 	public void run() {
 		log.debug("Run-Methode wird ausgeführt. Name und Nummer des Client-Threads wird initalisiert..."); 
-		Thread.currentThread().setName("Client-Thread-" + clientNumber);
+		Thread.currentThread().setName(clientName);
 		log.debug("Client-Thread wurde initalisiert"); 
         try {
         	log.debug("Warte auf andere Clients..."); 
@@ -83,7 +79,10 @@ public class ConnectionReusingQueue extends AbstractClient {
                 	//startzeit festlegen
                 	rttStartTime = System.nanoTime();
                 	doEcho(i); // nur senden
-                	EchoPDU receivedPdu = (EchoPDU) connection.receive();// empfangen
+                	log.debug("Nachricht wurde verschickt. Warte auf Antwort..");
+                	Thread.sleep(clientThinkTime);
+                	EchoPDU receivedPdu = (EchoPDU) responseConnection.receive();// empfangen
+                	log.debug("Antwort erhalten");
                 	long rtt = System.nanoTime() - rttStartTime;
                 	postReceive(i, receivedPdu, rtt);
                 	
@@ -96,7 +95,8 @@ public class ConnectionReusingQueue extends AbstractClient {
         } finally {
             try {
             	log.debug("Client hat seine Requests durch. Connection abbauen..."); 
-            	connection.close();
+            	requestConnection.close();
+            	responseConnection.close();
             	log.debug("Connection abgebaut"); 
             } catch (Exception e) {
                 ExceptionHandler.logException(e);
@@ -106,10 +106,7 @@ public class ConnectionReusingQueue extends AbstractClient {
 	
 	
 	private void doEcho(int i) throws Exception {
-		// RTT-Startzeit ermitteln
-        
+		requestConnection.send(constructEchoPDU(i));  
         sharedData.incrSentMsgCounter(clientNumber);
-        connection.send(constructEchoPDU(i));  
-        Thread.sleep(clientThinkTime);
 	}
 }

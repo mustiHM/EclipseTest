@@ -46,6 +46,11 @@ public final class ClientFactory {
     }
 
     public static ConnectionFactory getDecoratedFactory(ConnectionFactory connectionFactory) {
-        return new DecoratingConnectionFactory(connectionFactory);
+        if(connectionFactory instanceof QueueConnectionFactory){
+        	return connectionFactory;
+        }
+        else{
+        	return new DecoratingConnectionFactory(connectionFactory);
+        }
     }
 }

@@ -13,14 +13,15 @@ public class QueueConnectionFactory implements ConnectionFactory {
 	//Connection zum Senden an die Requests-Queue
 	public Connection connectToServer(String remoteServerAddress,
 			int serverPort, int localPort) throws Exception {
-		EMSConnection connection = null;
+		//EMSConnection connection = null;
+		QueueConnection connection = null;
 		boolean connected = false;
 		while(!connected) {
 			try {
-				log.debug("EMS Connection wird aufgebaut...");
-				connection = new EMSConnection(remoteServerAddress, serverPort, "", "");
+				log.debug("Queue Connection wird aufgebaut...");
+				connection = new QueueConnection(remoteServerAddress, serverPort, "requests");
 				connected = true;
-				log.debug("EMS Connection aufgebaut");
+				log.debug("Queue Connection aufgebaut");
 			} catch (Exception e) {
 				//try again
 			}
@@ -29,21 +30,21 @@ public class QueueConnectionFactory implements ConnectionFactory {
 		return connection;
 	}
 
-/*	//Connection zum Empfangen von der Repsonses-Queue
+	//Connection zum Empfangen von der Repsonses-Queue
 	public Connection acceptFromServer(String remoteServerAddress,
-			int serverPort, int localPort) throws Exception {
-		EMSConnection connection = null;
+			int serverPort, String queueName) throws Exception {
+		QueueConnection connection = null;
 		boolean connected = false;
 		while(!connected) {
 			try {
-				connection = new EMSConnection(remoteServerAddress, serverPort, "", "","responses");
+				connection = new QueueConnection(remoteServerAddress, serverPort, queueName);
 				connected = true;
 			} catch (Exception e) {
 				//try again
 			}
 		}
 		return connection;
-	}*/
+	}
 	
 	
 }

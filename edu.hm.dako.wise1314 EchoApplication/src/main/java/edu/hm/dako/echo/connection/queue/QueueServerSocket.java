@@ -26,8 +26,8 @@ public class QueueServerSocket implements ServerSocket {
 		this.responseQueue = responseQueue;
 		isClosed = false;
 		
-		requestConnection = new QueueConnectionMock(requestIP, requestPort, requestQueue);
-		responseConnection = new QueueConnectionMock(responseIP, responsePort, responseQueue);
+		requestConnection = new QueueConnection(requestIP, requestPort, requestQueue);
+		responseConnection = new QueueConnection(responseIP, responsePort, responseQueue);
 	}
 	
 	@Override
@@ -38,7 +38,7 @@ public class QueueServerSocket implements ServerSocket {
 		 * Da hier keine Verbindungswünsche eintreffen, wird sofort die Verbindung zur Request-Queue zurückgegeben.
 		 */
 		
-		return requestConnection;
+		return new QueueConnection(requestIP, requestPort, requestQueue);
 	}
 
 	@Override
@@ -59,9 +59,9 @@ public class QueueServerSocket implements ServerSocket {
 	 */
 	public Connection respond(String queueNameForClient){
 		if(queueNameForClient==null)
-			return responseConnection;
+			return new QueueConnection(responseIP, responsePort, responseQueue);
 		else{
-			return new QueueConnectionMock(responseIP, responsePort, queueNameForClient);
+			return new QueueConnection(responseIP, responsePort, queueNameForClient);
 		}
 	}
 
