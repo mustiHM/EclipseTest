@@ -56,7 +56,7 @@ public class QueueEchoServerImpl implements EchoServer {
 		PropertyConfigurator.configureAndWatch("log4j.server.properties", 60 * 1000);
         System.out.println("Echoserver wartet auf PDUs aus der Request Queue...");
 
-        /*
+        
         log.info("DB Objekte werden initiiert");
 		try {
 			
@@ -70,7 +70,7 @@ public class QueueEchoServerImpl implements EchoServer {
 			e1.printStackTrace();
 		}
 		log.info("DB Objekte initiiert");
-		*/
+		
         
 		while (!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
         	try {
@@ -78,7 +78,6 @@ public class QueueEchoServerImpl implements EchoServer {
 				/*
 				 * Bei der QueueConnection wird an dieser Stelle keine Verbindung angenommen wie bei TCP.
 				 * Hier wird einfach eine Verbindung zur Queue hergestellt und gewartet bis ein Paket eintrifft.
-				 * Vorher bringt es nichts, unnötige Threads und Verbindungen aufzubauen.
 				 */
 				
         		Connection requestConnection = socket.accept();
@@ -88,7 +87,7 @@ public class QueueEchoServerImpl implements EchoServer {
                 executorService.submit(new EchoWorker(requestConnection, responseConnection));
                 
              // TODO fürs lokale Testen wird hier eine kleine Schlafpause eingebaut, damit unsere Rechner nicht abrauchen (auf VM entfernen)
-                Thread.sleep(500);
+                Thread.sleep(100);
                 
         		
 			} catch (Exception e) {
@@ -105,7 +104,7 @@ public class QueueEchoServerImpl implements EchoServer {
 		log.info("EchoServer wird beendet..");
         Thread.currentThread().interrupt();
         
-        /*
+        
         dbConnectionCountDB.close();
         dbConnectionCountDB = null;
         dbConnectionTraceDB.close();
@@ -113,7 +112,7 @@ public class QueueEchoServerImpl implements EchoServer {
         
         dbConnectorCountDB.stop();
         dbConnectorTraceDB.stop();
-        */
+        
         
         socket.close();
         executorService.shutdown();
@@ -136,13 +135,6 @@ public class QueueEchoServerImpl implements EchoServer {
 		
 		private Connection requestConnection;
 		private Connection responseConnection;
-		
-		private DBConnector dbConnectorCountDB;
-		private DBConnector dbConnectorTraceDB;
-		private java.sql.Connection dbConnectionCountDB;
-		private java.sql.Connection dbConnectionTraceDB;
-		
-		
 		
 		private static final String SQL_SELECT_NUMBER = "select number from counter where client_id = ?";
 	    private static final String SQL_UPDATE_NUMBER = "update counter set number = number+1 where client_id = ?";
@@ -241,15 +233,6 @@ public class QueueEchoServerImpl implements EchoServer {
 
 						long startTime = System.currentTimeMillis(); // Zeit nehmen
 
-						dbConnectorCountDB = new DBConnector("app", "passwort",
-								"countdb", "jdbc:mysql://localhost/countdb");
-						dbConnectionCountDB = dbConnectorCountDB
-								.getConnection();
-						dbConnectorTraceDB = new DBConnector("app", "passwort",
-								"tracedb", "jdbc:mysql://localhost/tracedb");
-						dbConnectionTraceDB = dbConnectorTraceDB
-								.getConnection();
-
 						// ResponseQueue für den Client dynamisch erstellen
 						log.debug("Erstelle ResponseQueue für"
 								+ pdu.getClientName());
@@ -338,13 +321,6 @@ public class QueueEchoServerImpl implements EchoServer {
 				requestConnection.close();
 				responseConnection.close();
 				
-				dbConnectionCountDB.close();
-		        dbConnectionCountDB = null;
-		        dbConnectionTraceDB.close();
-		        dbConnectionTraceDB = null;
-		        
-		        dbConnectorCountDB.stop();
-		        dbConnectorTraceDB.stop();
 			} catch (Exception e) {
 				e.printStackTrace();
 				log.error("Fehler beim Schließen der Queue-Verbindungen", e);
