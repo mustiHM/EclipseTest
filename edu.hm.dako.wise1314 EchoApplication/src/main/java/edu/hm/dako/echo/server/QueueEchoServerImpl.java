@@ -290,7 +290,7 @@ public class QueueEchoServerImpl implements EchoServer {
 
 						long serverTime = System.currentTimeMillis()
 								- startTime;
-						pdu.setServerTime(serverTime);
+						pdu.setServerTime(pdu.getServerTime() + serverTime);
 
 						// Antwort in die Response-Queue schicken
 						log.debug("Versuche Antwort in die Response-Queue zu schicken.");
