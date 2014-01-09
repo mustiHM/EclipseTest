@@ -96,6 +96,8 @@ public class GUI {
 			// TODO
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
+				int number = adminService.getNumberOfMessages(textField.getText());
+				textField_1.setText(String.valueOf(number));
 			}
 			
 		});

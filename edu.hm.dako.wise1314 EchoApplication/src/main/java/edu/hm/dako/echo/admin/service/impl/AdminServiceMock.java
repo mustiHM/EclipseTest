@@ -23,9 +23,8 @@ public class AdminServiceMock implements AdminService{
 
 	@Override
 	public int getNumberOfMessages(String clientID) {
-		int numClientID = Integer.parseInt(clientID);
-		if (numClientID == 1){
-			return 100;
+		if (clientID.equals("client1")){
+			return 1;
 		}
 		else
 		return 0;

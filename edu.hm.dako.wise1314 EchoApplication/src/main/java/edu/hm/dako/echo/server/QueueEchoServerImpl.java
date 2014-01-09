@@ -37,6 +37,7 @@ public class QueueEchoServerImpl implements EchoServer {
 	private DBConnector dbConnectorTraceDB;
 	private java.sql.Connection dbConnectionCountDB;
 	private java.sql.Connection dbConnectionTraceDB;
+	private boolean needDBConnection = false;
 	/**
 	 * Wird z.B. von der ServerFactory aufgerufen und richtet die Queue-Implementierung des Echo-Servers her.
 	 * @param executorService der Executor-Service für die Thread-Steuerung
@@ -64,6 +65,7 @@ public class QueueEchoServerImpl implements EchoServer {
 			dbConnectionCountDB = dbConnectorCountDB.getConnection();
 			dbConnectorTraceDB = new DBConnector("app", "passwort", "tracedb", "jdbc:mysql://localhost/tracedb");
 			dbConnectionTraceDB = dbConnectorTraceDB.getConnection();
+			needDBConnection = false;
 			
 		} catch (Exception e1) {
 			log.error("Fehler beim Aufbauen der Verbindungen zu den Datenbanken!");
@@ -82,6 +84,12 @@ public class QueueEchoServerImpl implements EchoServer {
 				
         		Connection requestConnection = socket.accept();
         		Connection responseConnection = socket.respond(null); // muss vom Worker-Thread dynamisch richtig erstellt werden, sonst greift die Standart-Queue
+        		
+        		if(needDBConnection){
+            		dbConnectionCountDB = dbConnectorCountDB.getConnection();
+            		dbConnectionTraceDB = dbConnectorTraceDB.getConnection(); 
+            		needDBConnection = false;
+        		}
         		
         		// Neuen Workerthread starten
                 executorService.submit(new EchoWorker(requestConnection, responseConnection));
@@ -153,42 +161,41 @@ public class QueueEchoServerImpl implements EchoServer {
 		 * Speichert einen Log-Eintrag zu einem Request-PDU in die Datenbank.
 		 * @param clientName Name des Clients
 		 * @param message die Nachricht des Clients
+		 * @throws SQLException 
 		 */
-		private void insertTrace(String clientName, String message){
-			try {
+		private void insertTrace(String clientName, String message) throws SQLException{
+			
 				PreparedStatement pstmt = dbConnectionTraceDB.prepareStatement(SQL_INSERT_LOGS);
 				pstmt.setString(1, clientName);
 				pstmt.setString(2, message);
 				pstmt.executeUpdate();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
+			
 		}
 		
 		/**
 		 * Speichert einen Client mit seiner Nachrichtenanzahl in die Datenbank
 		 * @param clientId die ClientID
 		 * @param number die Nachrichtennr dieses Clients
+		 * @throws SQLException 
 		 */
-		private void insertClient(String clientId, int number){
-			try {
+		private void insertClient(String clientId, int number) throws SQLException{
+			
 				PreparedStatement pstmt = dbConnectionCountDB.prepareStatement(SQL_INSERT_COUNTER);
 				pstmt.setString(1, clientId);
 				pstmt.setInt(2, number);
 				pstmt.executeUpdate();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
+			
 		}
 		/**
 		 * Liest die Anzahl an Nachrichten eines Clients aus der DB
 		 * @param clientId die ClientID
 		 * @return Anzahl der Nachrichten
+		 * @throws SQLException 
 		 */
-		private int getNumberForClient(String clientId){
+		private int getNumberForClient(String clientId) throws SQLException{
 			
 			int number = 0;
-			try {
+			
 	            PreparedStatement pstmt = dbConnectionCountDB.prepareStatement(SQL_SELECT_NUMBER);
 	            pstmt.setString(1, clientId);
 	            ResultSet rset = pstmt.executeQuery();
@@ -198,9 +205,7 @@ public class QueueEchoServerImpl implements EchoServer {
 	                    number = rset.getInt(i);
 	                }
 	            }
-	        } catch (Exception e) {
-	            e.printStackTrace();
-	        }
+	       
 			
 			
 			return number;
@@ -210,15 +215,14 @@ public class QueueEchoServerImpl implements EchoServer {
 		/**
 		 * Erhöht die Anzahl an Nachrichten eines Clients in der DB
 		 * @param clientId die ClientID
+		 * @throws SQLException 
 		 */
-		private void increaseNumberForClient(String clientId){
-			try {
+		private void increaseNumberForClient(String clientId) throws SQLException{
+			
 				PreparedStatement pstmt = dbConnectionCountDB.prepareStatement(SQL_UPDATE_NUMBER);
 				pstmt.setString(1, clientId);
 				pstmt.executeUpdate();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
+			
 		}
 		
 		public void run() {
@@ -226,6 +230,7 @@ public class QueueEchoServerImpl implements EchoServer {
 			try {
 				log.info("Worker-Thread wartet auf Requests..");
 				EchoPDU pdu = (EchoPDU) requestConnection.receive();
+				UserTransaction utx = null;
 				
 				if (pdu != null) {
 					try {
@@ -239,7 +244,7 @@ public class QueueEchoServerImpl implements EchoServer {
 						responseConnection = socket
 								.respond(pdu.getClientName());
 
-						UserTransaction utx = null;
+						
 						try {
 							System.out.println("create initial context");
 							Context ictx = new InitialContext();
@@ -296,9 +301,12 @@ public class QueueEchoServerImpl implements EchoServer {
 						log.debug("Versuche Antwort in die Response-Queue zu schicken.");
 						responseConnection.send(pdu);
 					} catch (Exception e) {
+						e.printStackTrace();
 						log.error("Fehler bei der Verarbeitung der PDU");
 						log.info("Verschicke Packet wieder zurück in die Request-Queue");
 						requestConnection.send(pdu);
+						utx.rollback();
+						needDBConnection = true;
 					}
 				}
 				else{
